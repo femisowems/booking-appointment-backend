@@ -18,7 +18,7 @@ COPY . .
 # Build the application
 # CGO_ENABLED=0 disables CGO for a static binary
 # -o api sets the output binary name
-RUN CGO_ENABLED=0 GOOS=linux go build -o api cmd/api/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -o server cmd/api/main.go
 
 # Run Stage
 FROM alpine:3.19
@@ -29,7 +29,7 @@ WORKDIR /app
 RUN apk add --no-cache ca-certificates
 
 # Copy binary from builder
-COPY --from=builder /app/api .
+COPY --from=builder /app/server .
 # Copy migrations if needed (or rely on them being embedded/external, but code looks for file system)
 COPY --from=builder /app/migrations ./migrations
 
@@ -37,4 +37,4 @@ COPY --from=builder /app/migrations ./migrations
 EXPOSE 8080
 
 # Run the binary
-CMD ["./api"]
+CMD ["./server"]
