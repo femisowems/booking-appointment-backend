@@ -11,7 +11,7 @@ type User struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
-type Provider struct {
+type Event struct {
 	ID        string    `json:"id"`
 	Name      string    `json:"name"`
 	Timezone  string    `json:"timezone"`

@@ -9,67 +9,67 @@ import (
 	_ "github.com/lib/pq" // Postgres driver
 )
 
-type PostgresAppointmentRepository struct {
+type PostgresReservationRepository struct {
 	db *sql.DB
 }
 
-func NewPostgresAppointmentRepository(db *sql.DB) *PostgresAppointmentRepository {
-	return &PostgresAppointmentRepository{db: db}
+func NewPostgresReservationRepository(db *sql.DB) *PostgresReservationRepository {
+	return &PostgresReservationRepository{db: db}
 }
 
-func (r *PostgresAppointmentRepository) Save(ctx context.Context, a *domain.Appointment) error {
+func (r *PostgresReservationRepository) Save(ctx context.Context, res *domain.Reservation) error {
 	query := `
-		INSERT INTO appointments (id, user_id, provider_id, start_time, end_time, status, version, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+		INSERT INTO reservations (id, user_id, event_id, start_time, end_time, ticket_count, status, version, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 	`
 	_, err := r.db.ExecContext(ctx, query,
-		a.ID, a.UserID, a.ProviderID, a.StartTime, a.EndTime, a.Status, a.Version, a.CreatedAt, a.UpdatedAt,
+		res.ID, res.UserID, res.EventID, res.StartTime, res.EndTime, res.TicketCount, res.Status, res.Version, res.CreatedAt, res.UpdatedAt,
 	)
 	return err
 }
 
-func (r *PostgresAppointmentRepository) GetByID(ctx context.Context, id string) (*domain.Appointment, error) {
+func (r *PostgresReservationRepository) GetByID(ctx context.Context, id string) (*domain.Reservation, error) {
 	query := `
-		SELECT id, user_id, provider_id, start_time, end_time, status, version, created_at, updated_at
-		FROM appointments WHERE id = $1
+		SELECT id, user_id, event_id, start_time, end_time, ticket_count, status, version, created_at, updated_at
+		FROM reservations WHERE id = $1
 	`
 	row := r.db.QueryRowContext(ctx, query, id)
-	
-	var a domain.Appointment
+
+	var res domain.Reservation
 	err := row.Scan(
-		&a.ID, &a.UserID, &a.ProviderID, &a.StartTime, &a.EndTime, &a.Status, &a.Version, &a.CreatedAt, &a.UpdatedAt,
+		&res.ID, &res.UserID, &res.EventID, &res.StartTime, &res.EndTime, &res.TicketCount, &res.Status, &res.Version, &res.CreatedAt, &res.UpdatedAt,
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, nil // Or return specific ErrNotFound
+			return nil, nil
 		}
 		return nil, err
 	}
-	return &a, nil
+	return &res, nil
 }
 
-func (r *PostgresAppointmentRepository) GetByProviderAndRange(ctx context.Context, providerID string, start, end time.Time) ([]*domain.Appointment, error) {
+func (r *PostgresReservationRepository) GetByEventAndRange(ctx context.Context, eventID string, start, end time.Time) ([]*domain.Reservation, error) {
 	query := `
-		SELECT id, user_id, provider_id, start_time, end_time, status, version, created_at, updated_at
-		FROM appointments 
-		WHERE provider_id = $1 AND start_time >= $2 AND start_time < $3 AND status != 'CANCELLED'
+		SELECT id, user_id, event_id, start_time, end_time, ticket_count, status, version, created_at, updated_at
+		FROM reservations 
+		WHERE event_id = $1 AND start_time >= $2 AND start_time < $3 AND status != 'CANCELLED'
 		ORDER BY start_time ASC
 	`
-	rows, err := r.db.QueryContext(ctx, query, providerID, start, end)
+	rows, err := r.db.QueryContext(ctx, query, eventID, start, end)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var appointments []*domain.Appointment
+	var reservations []*domain.Reservation
 	for rows.Next() {
-		var a domain.Appointment
+		var res domain.Reservation
 		if err := rows.Scan(
-			&a.ID, &a.UserID, &a.ProviderID, &a.StartTime, &a.EndTime, &a.Status, &a.Version, &a.CreatedAt, &a.UpdatedAt,
+			&res.ID, &res.UserID, &res.EventID, &res.StartTime, &res.EndTime, &res.TicketCount, &res.Status, &res.Version, &res.CreatedAt, &res.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}
-		appointments = append(appointments, &a)
+		reservations = append(reservations, &res)
 	}
-	return appointments, nil
+	return reservations, nil
 }

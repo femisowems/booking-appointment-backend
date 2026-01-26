@@ -18,7 +18,7 @@ import (
 )
 
 var (
-	Repo      *repositories.PostgresAppointmentRepository
+	Repo      *repositories.PostgresReservationRepository
 	Publisher *messaging.RabbitMQPublisher
 	server    http.Handler
 	once      sync.Once
@@ -26,7 +26,7 @@ var (
 
 func GetHandler() http.Handler {
 	once.Do(func() {
-		log.Println("Initializing Appointment API Service...")
+		log.Println("Initializing Reservation API Service...")
 
 		// 1. Database Connection
 		dbConnStr := os.Getenv("DATABASE_URL")
@@ -37,17 +37,12 @@ func GetHandler() http.Handler {
 			log.Println("Found DATABASE_URL, attempting connection...")
 		}
 
-		// Use a recovery middleware for the entire init process in case of early panics
-		// But here we just want to avoid os.Exit/log.Fatal
 		db, err := sql.Open("postgres", dbConnStr)
 		if err != nil {
 			log.Printf("ERROR: Failed to open DB driver: %v", err)
-			// We continue, but later requests might fail if db is nil or invalid.
-			// sql.Open usually doesn't fail unless driver is missing.
 		}
 
 		// 1.5 Run Migrations
-		// Only attempt if we have a DB object
 		if db != nil {
 			paths := []string{
 				"backend/migrations/001_initial_schema.sql", // From repo root
@@ -96,12 +91,7 @@ func GetHandler() http.Handler {
 
 		// 3. Initialize Adapters
 		if db != nil {
-			Repo = repositories.NewPostgresAppointmentRepository(db)
-		} else {
-			// Mock or nil repo to prevent nil pointer panics in service?
-			// Better: let it be nil, but handle nil in service?
-			// For now, we assume NewPostgresAppointmentRepository handles or we cope.
-			// Actually repositories.NewPostgresAppointmentRepository(nil) might be fine until Method call.
+			Repo = repositories.NewPostgresReservationRepository(db)
 		}
 
 		// Handle optional publisher
@@ -115,11 +105,10 @@ func GetHandler() http.Handler {
 		}
 
 		// 4. Initialize Core Service
-		// Check for nil Repo if needed, but assuming Service handles it or fail fast on request
-		svc := services.NewAppointmentService(Repo, Publisher)
+		svc := services.NewReservationService(Repo, Publisher)
 
 		// 5. Initialize Handlers
-		h := handlers.NewAppointmentHandler(svc)
+		h := handlers.NewReservationHandler(svc)
 
 		// 6. Routes
 		mux := http.NewServeMux()
@@ -129,8 +118,7 @@ func GetHandler() http.Handler {
 			w.Write([]byte("OK"))
 		}
 
-		appointmentHandler := func(w http.ResponseWriter, r *http.Request) {
-			// Double check: if Repo is nil, return 500 error cleanly
+		reservationHandler := func(w http.ResponseWriter, r *http.Request) {
 			if Repo == nil {
 				http.Error(w, "Database connection unavailable", http.StatusServiceUnavailable)
 				return
@@ -145,16 +133,16 @@ func GetHandler() http.Handler {
 			}
 		}
 
-		// Handle both root paths and /api prefixed paths for Vercel/Local compatibility
-		// When Vercel rewrites /api/foo -> dest, req.URL.Path might still be /api/foo
-
 		mux.HandleFunc("/health", healthHandler)
 		mux.HandleFunc("/api/health", healthHandler)
 
-		mux.HandleFunc("/appointments", appointmentHandler)
-		mux.HandleFunc("/api/appointments", appointmentHandler)
+		mux.HandleFunc("/reservations", reservationHandler)
+		mux.HandleFunc("/api/reservations", reservationHandler)
 
-		// Catch-all to see what's happening with unmatched routes
+		eventHandler := handlers.NewEventHandler()
+		mux.HandleFunc("/events", eventHandler.List)
+		mux.HandleFunc("/api/events", eventHandler.List)
+
 		mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 			log.Printf("DEBUG: Unmatched route: %s %s", r.Method, r.URL.Path)
 			http.Error(w, "Not Found (Catch-All)", http.StatusNotFound)

@@ -22,7 +22,7 @@ func main() {
 		log.Println("No .env file found or error loading it (using system env)")
 	}
 
-	log.Println("Starting Appointment Worker Service...")
+	log.Println("Starting Reservation Worker Service...")
 
 	// 1. Initialize RabbitMQ
 	amqpConnStr := os.Getenv("RABBITMQ_URL")
@@ -60,9 +60,9 @@ func main() {
 	dynamoClient := dynamodb.NewFromConfig(cfg)
 
 	// Create table if not exists (for local dev convenience)
-	ensureTableExists(context.TODO(), dynamoClient, "AppointmentsReadModel")
+	ensureTableExists(context.TODO(), dynamoClient, "ReservationsReadModel")
 
-	repo := repositories.NewDynamoDBAppointmentRepository(dynamoClient, "AppointmentsReadModel")
+	repo := repositories.NewDynamoDBReservationRepository(dynamoClient, "ReservationsReadModel")
 
 	// 3. Start Worker
 	worker := messaging.NewWorker(rabbitConn, repo)

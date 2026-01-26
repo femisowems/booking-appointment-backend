@@ -15,7 +15,7 @@ func main() {
 		log.Println("No .env file found or error loading it (using system env)")
 	}
 
-	log.Println("Starting Appointment API Service...")
+	log.Println("Starting Reservation API Service...")
 
 	h := bootstrap.GetHandler()
 

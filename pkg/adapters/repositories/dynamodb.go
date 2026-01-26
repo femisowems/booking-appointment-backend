@@ -11,32 +11,32 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 )
 
-type DynamoDBAppointmentRepository struct {
+type DynamoDBReservationRepository struct {
 	client    *dynamodb.Client
 	tableName string
 }
 
-func NewDynamoDBAppointmentRepository(client *dynamodb.Client, tableName string) *DynamoDBAppointmentRepository {
-	return &DynamoDBAppointmentRepository{
+func NewDynamoDBReservationRepository(client *dynamodb.Client, tableName string) *DynamoDBReservationRepository {
+	return &DynamoDBReservationRepository{
 		client:    client,
 		tableName: tableName,
 	}
 }
 
-// SaveReadModel writes an optimized read view of the appointment.
-// PK: PROVIDER#<provider_id>
-// SK: APPT#<start_time>#<appt_id>
-func (r *DynamoDBAppointmentRepository) SaveReadModel(ctx context.Context, apptID, providerID, startTime, status string) error {
-	pk := fmt.Sprintf("PROVIDER#%s", providerID)
+// SaveReadModel writes an optimized read view of the reservation.
+// PK: EVENT#<event_id>
+// SK: RES#<start_time>#<reservation_id>
+func (r *DynamoDBReservationRepository) SaveReadModel(ctx context.Context, reservationID, eventID, startTime, status string) error {
+	pk := fmt.Sprintf("EVENT#%s", eventID)
 	// ISO8601 strings sort lexicographically
-	sk := fmt.Sprintf("APPT#%s#%s", startTime, apptID)
+	sk := fmt.Sprintf("RES#%s#%s", startTime, reservationID)
 
 	_, err := r.client.PutItem(ctx, &dynamodb.PutItemInput{
 		TableName: aws.String(r.tableName),
 		Item: map[string]types.AttributeValue{
 			"PK":            &types.AttributeValueMemberS{Value: pk},
 			"SK":            &types.AttributeValueMemberS{Value: sk},
-			"AppointmentID": &types.AttributeValueMemberS{Value: apptID},
+			"ReservationID": &types.AttributeValueMemberS{Value: reservationID},
 			"Status":        &types.AttributeValueMemberS{Value: status},
 			"UpdatedAt":     &types.AttributeValueMemberS{Value: time.Now().Format(time.RFC3339)},
 		},
