@@ -32,7 +32,7 @@ func GetHandler() http.Handler {
 		dbConnStr := os.Getenv("DATABASE_URL")
 		if dbConnStr == "" {
 			log.Println("WARNING: DATABASE_URL is not set. Defaulting to localhost.")
-			dbConnStr = "postgres://user:password@localhost:5432/appointments?sslmode=disable"
+			dbConnStr = "postgres://user:password@localhost:5432/reservations?sslmode=disable"
 		} else {
 			log.Println("Found DATABASE_URL, attempting connection...")
 		}

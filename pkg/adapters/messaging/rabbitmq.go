@@ -44,9 +44,9 @@ func (p *RabbitMQPublisher) Publish(ctx context.Context, event interface{}) erro
 		return err
 	}
 
-	// We could parse event type to set routing key, e.g., "appointment.created"
+	// We could parse event type to set routing key, e.g., "reservation.created"
 	// For simplicity, hardcoding or using a generic key
-	routingKey := "appointment.event"
+	routingKey := "reservation.event"
 
 	return p.ch.PublishWithContext(ctx,
 		"events_exchange",
