@@ -23,6 +23,9 @@ func (h *EventHandler) List(w http.ResponseWriter, r *http.Request) {
 		{ID: "event-1", Name: "Late Night Comedy", Venue: "The Basement Club"},
 		{ID: "event-2", Name: "Jazz Quartet", Venue: "Blue Note Lounge"},
 		{ID: "event-3", Name: "Indie Film Festival", Venue: "Cinema 4"},
+		{ID: "event-4", Name: "Tech Conference 2026", Venue: "Convention Center"},
+		{ID: "event-5", Name: "Live Podcast Recording", Venue: "Studio A"},
+		{ID: "event-6", Name: "Charity Gala", Venue: "Grand Ballroom"},
 	}
 
 	w.Header().Set("Content-Type", "application/json")
