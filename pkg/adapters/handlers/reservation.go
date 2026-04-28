@@ -2,9 +2,12 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
+	"strings"
 	"time"
 
+	"github.com/femisowemimo/booking-appointment/backend/pkg/core/domain"
 	"github.com/femisowemimo/booking-appointment/backend/pkg/core/ports"
 )
 
@@ -102,4 +105,51 @@ func (h *ReservationHandler) Get(w http.ResponseWriter, r *http.Request) {
 	}
 
 	json.NewEncoder(w).Encode(res)
+}
+
+func (h *ReservationHandler) CheckIn(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	id, ok := reservationActionPath(r.URL.Path, "checkin")
+	if !ok || id == "" {
+		http.NotFound(w, r)
+		return
+	}
+
+	res, err := h.service.CheckIn(r.Context(), id)
+	if err != nil {
+		if errors.Is(err, domain.ErrCheckInNotAllowed) {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if res == nil {
+		http.Error(w, "Not found", http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(res)
+}
+
+func reservationActionPath(path, action string) (string, bool) {
+	trimmed := strings.TrimPrefix(path, "/api/reservations/")
+	if trimmed == path {
+		trimmed = strings.TrimPrefix(path, "/reservations/")
+		if trimmed == path {
+			return "", false
+		}
+	}
+
+	parts := strings.Split(trimmed, "/")
+	if len(parts) != 2 || parts[1] != action {
+		return "", false
+	}
+
+	return parts[0], true
 }

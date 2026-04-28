@@ -148,6 +148,8 @@ func GetHandler() http.Handler {
 
 		mux.HandleFunc("/reservations", reservationHandler)
 		mux.HandleFunc("/api/reservations", reservationHandler)
+		mux.HandleFunc("/reservations/", h.CheckIn)
+		mux.HandleFunc("/api/reservations/", h.CheckIn)
 
 		eventHandler := handlers.NewEventHandler()
 		mux.HandleFunc("/events", eventHandler.List)

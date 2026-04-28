@@ -70,6 +70,23 @@ func (s *ReservationService) Get(ctx context.Context, id string) (*domain.Reserv
 	return s.repo.GetByID(ctx, id)
 }
 
+func (s *ReservationService) CheckIn(ctx context.Context, id string) (*domain.Reservation, error) {
+	res, err := s.repo.GetByID(ctx, id)
+	if err != nil || res == nil {
+		return res, err
+	}
+
+	if err := res.CheckIn(); err != nil {
+		return nil, err
+	}
+
+	if err := s.repo.Save(ctx, res); err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}
+
 func (s *ReservationService) ListByEvent(ctx context.Context, eventID string, start, end time.Time) ([]*domain.Reservation, error) {
 	return s.repo.GetByEventAndRange(ctx, eventID, start, end)
 }

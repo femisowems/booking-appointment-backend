@@ -9,6 +9,7 @@ type ReservationStatus string
 
 const (
 	StatusBooked    ReservationStatus = "BOOKED"
+	StatusCheckedIn ReservationStatus = "CHECKED_IN"
 	StatusCancelled ReservationStatus = "CANCELLED"
 	StatusCompleted ReservationStatus = "COMPLETED"
 )
@@ -18,6 +19,7 @@ var (
 	ErrPastTime           = errors.New("cannot make reservation in the past")
 	ErrDuration           = errors.New("reservation duration must be positive")
 	ErrInvalidTicketCount = errors.New("ticket count must be between 1 and 6")
+	ErrCheckInNotAllowed  = errors.New("reservation cannot be checked in in its current state")
 )
 
 type Reservation struct {
@@ -66,4 +68,18 @@ func NewReservation(userID, eventID string, start, end time.Time, ticketCount in
 func (r *Reservation) Cancel() {
 	r.Status = StatusCancelled
 	r.UpdatedAt = time.Now()
+}
+
+func (r *Reservation) CheckIn() error {
+	switch r.Status {
+	case StatusCancelled, StatusCompleted:
+		return ErrCheckInNotAllowed
+	case StatusCheckedIn:
+		return nil
+	default:
+		r.Status = StatusCheckedIn
+		r.Version++
+		r.UpdatedAt = time.Now()
+		return nil
+	}
 }

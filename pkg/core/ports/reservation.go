@@ -20,5 +20,6 @@ type EventPublisher interface {
 type ReservationService interface {
 	Create(ctx context.Context, userID, eventID string, start, end time.Time, ticketCount int) (*domain.Reservation, error)
 	Get(ctx context.Context, id string) (*domain.Reservation, error)
+	CheckIn(ctx context.Context, id string) (*domain.Reservation, error)
 	ListByEvent(ctx context.Context, eventID string, start, end time.Time) ([]*domain.Reservation, error)
 }

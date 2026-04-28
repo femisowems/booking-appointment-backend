@@ -21,6 +21,15 @@ func (r *PostgresReservationRepository) Save(ctx context.Context, res *domain.Re
 	query := `
 		INSERT INTO reservations (id, user_id, event_id, start_time, end_time, ticket_count, status, version, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+		ON CONFLICT (id) DO UPDATE SET
+			user_id = EXCLUDED.user_id,
+			event_id = EXCLUDED.event_id,
+			start_time = EXCLUDED.start_time,
+			end_time = EXCLUDED.end_time,
+			ticket_count = EXCLUDED.ticket_count,
+			status = EXCLUDED.status,
+			version = EXCLUDED.version,
+			updated_at = EXCLUDED.updated_at
 	`
 	_, err := r.db.ExecContext(ctx, query,
 		res.ID, res.UserID, res.EventID, res.StartTime, res.EndTime, res.TicketCount, res.Status, res.Version, res.CreatedAt, res.UpdatedAt,
